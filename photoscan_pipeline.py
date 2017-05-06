@@ -57,9 +57,12 @@ class PointCloudGenerator(object):
 		self.chunk.addPhotos(pathes)
 
 	def alignPhotos(self):
+		print("AlignPhotos: Start")
 		self.chunk.matchPhotos(accuracy=self.accuracy, preselection=self.preselection, keypoint_limit = self.keypoint_limit, tiepoint_limit= self.tiepoint_limit)
 		self.chunk.alignCameras()
+		print("AlignPhotos: Finished")
 	def setScales(self):
+		print("SetScales: Start")
 		if self.scale_list is None:
 			return
 		self.chunk.detectMarkers(type=self.markerType, tolerance=self.tolerance)
@@ -79,17 +82,22 @@ class PointCloudGenerator(object):
 			marker1 = markers[mLabelNum2Key[m1]]
 			marker2 = markers[mLabelNum2Key[m2]]
 			scalebar = self.chunk.addScalebar(marker1, marker2)
-			scalebar.accuracy = accuracy
-			scalebar.distance = length
+			scalebar.reference.accuracy = accuracy
+			scalebar.reference.distance = length
+		print("SetScales: Finished")
 
 	def buildDenseCloud(self):
+		print("BuildDenseCloud: Start")
 		self.chunk.buildDenseCloud(quality=self.quality, filter=self.filter)
+		print("BuildDenseCloud: Finished")
 	def saveProject(self, output_dir):
+		if not os.path.exists(output_dir):
+			os.makedirs(output_dir)
 		path = os.path.join(output_dir, self.project_name + ".psx")
 		self.doc.save(path, [self.chunk])
 	def exportPointCloud(self,output_dir):
 		path = os.path.join(output_dir, self.project_name + ".txt")
-		self.chunk.exportPoints(path, PhotoScan.DataSource.DenseCloudData, normals = True, colors = True, format = "xyz")
+		self.chunk.exportPoints(path, PhotoScan.DataSource.DenseCloudData, normals = True, colors = True, format = PhotoScan.PointsFormat.PointsFormatXYZ)
 	def generatePointCloud(self):
 		self.addPhotos(self.input_dir)
 		self.setScales()
@@ -111,10 +119,11 @@ def batch(input_dir, output_dir, infofile = "info.json"):
 		input_dir_specimen = os.path.normpath(os.path.join(input_dir, value["path"]))
 		output_dir_specimen = os.path.normpath(os.path.join(output_dir, value["path"]))
 		if not os.path.exists(output_dir_specimen):
-			os.makerdirs(output_dir_specimen)
+			os.makedirs(output_dir_specimen)
 		project_name = key
-		print(os.path.join(output_dir_specimen, project_name + ".psx"))
-		existProject = os.path.isfile(os.path.join(output_dir_specimen, project_name + ".psx"))
+		projectPath = os.path.join(output_dir_specimen, project_name + ".psx")
+		print(projectPath)
+		existProject = os.path.isfile(projectPath)
 		if not existProject:
 			existOutputDir = os.path.isdir(output_dir_specimen)
 			if not existOutputDir:
@@ -127,7 +136,7 @@ def main():
 	argc = len(argvs)
 	print(argvs)
 	if argc == 3:
-		batch(argvs[1], argvs[1])
+		batch(argvs[1], argvs[2])
 	else:
 		print("Usage: This script needs 'input_dir' and 'output_dir' pathes.")
 	# batch( r"//norin61-nas.ut-biomet.org/home/Soybean/Tanashi_2016_output/20160708")
